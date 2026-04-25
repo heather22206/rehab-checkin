@@ -1,0 +1,583 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Mike's Daily Check-In</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f1318;
+    --surface: #181e27;
+    --surface2: #1e2633;
+    --accent: #f0a500;
+    --text: #e8eef5;
+    --muted: #6b7583;
+    --success: #3fb950;
+    --red: #ff4444;
+    --radius: 18px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    top: -150px; left: -150px;
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(240,165,0,0.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .app { width: 100%; max-width: 640px; }
+
+  .header { text-align: center; margin-bottom: 28px; }
+  .header h1 { font-family: 'Lora', serif; font-size: 2rem; font-weight: 400; color: var(--accent); }
+  .header p { color: var(--muted); font-size: 0.9rem; margin-top: 5px; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: var(--radius);
+    padding: 28px;
+  }
+
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* ── Setup ── */
+  .setup-intro {
+    font-family: 'Lora', serif;
+    font-size: 1.15rem;
+    color: var(--muted);
+    line-height: 1.7;
+    margin-bottom: 22px;
+  }
+
+  label {
+    display: block;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 1.4px;
+    color: var(--muted);
+    margin-bottom: 7px;
+    margin-top: 18px;
+  }
+
+  textarea, input[type="text"] {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1rem;
+    padding: 12px 14px;
+    outline: none;
+    resize: none;
+    transition: border-color 0.2s;
+  }
+  textarea:focus, input:focus { border-color: var(--accent); }
+  textarea { height: 100px; }
+
+  .btn-primary {
+    width: 100%;
+    margin-top: 24px;
+    padding: 15px;
+    border-radius: 50px;
+    border: none;
+    background: var(--accent);
+    color: #000;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+  }
+  .btn-primary:hover { background: #fdb833; }
+  .btn-primary:active { transform: scale(0.98); }
+
+  /* ── Banner ── */
+  .banner {
+    background: var(--surface2);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 10px 10px 0;
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    font-size: 0.85rem;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+  .banner strong {
+    display: block;
+    color: var(--text);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    margin-bottom: 3px;
+  }
+
+  /* ── Chat ── */
+  .chat {
+    min-height: 260px;
+    max-height: 400px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-bottom: 18px;
+    padding-right: 4px;
+  }
+  .chat::-webkit-scrollbar { width: 3px; }
+  .chat::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+  .msg { display: flex; gap: 10px; animation: fadeUp 0.3s ease; }
+  .msg.user { flex-direction: row-reverse; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .avatar {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .msg.ai .avatar { background: var(--accent); }
+  .msg.user .avatar { background: var(--surface2); }
+
+  .bubble {
+    max-width: 82%;
+    padding: 10px 14px;
+    font-size: 0.97rem;
+    line-height: 1.55;
+    border-radius: 16px;
+  }
+  .msg.ai .bubble {
+    background: var(--surface2);
+    border-radius: 4px 16px 16px 16px;
+  }
+  .msg.user .bubble {
+    background: rgba(240,165,0,0.13);
+    border: 1px solid rgba(240,165,0,0.2);
+    border-radius: 16px 4px 16px 16px;
+    color: #f5d98b;
+  }
+
+  .thinking { display: flex; gap: 5px; align-items: center; padding: 12px 16px; background: var(--surface2); border-radius: 4px 16px 16px 16px; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); animation: bounce 1.2s infinite; }
+  .dot:nth-child(2) { animation-delay: 0.2s; }
+  .dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bounce {
+    0%,80%,100% { transform: scale(0.7); opacity: 0.4; }
+    40% { transform: scale(1); opacity: 1; }
+  }
+
+  /* ── Input ── */
+  .input-wrap { display: flex; gap: 8px; align-items: flex-end; }
+  .input-wrap textarea { flex: 1; height: 58px; font-size: 0.95rem; margin: 0; }
+
+  .btn-send {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 10px;
+    width: 48px; height: 58px;
+    font-size: 1.3rem;
+    cursor: pointer;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s;
+  }
+  .btn-send:hover { background: #fdb833; }
+
+  .btn-mic {
+    width: 100%;
+    margin-top: 10px;
+    padding: 13px;
+    border-radius: 50px;
+    border: 2px solid rgba(240,165,0,0.3);
+    background: transparent;
+    color: var(--accent);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: all 0.2s;
+  }
+  .btn-mic:hover { border-color: var(--accent); }
+  .btn-mic.listening {
+    border-color: var(--red);
+    color: var(--red);
+    background: rgba(255,68,68,0.08);
+    animation: pulse 1.2s infinite;
+  }
+  @keyframes pulse {
+    0%,100% { box-shadow: 0 0 0 0 rgba(255,68,68,0.3); }
+    50%      { box-shadow: 0 0 0 8px rgba(255,68,68,0); }
+  }
+
+  .reset-link {
+    text-align: right;
+    margin-top: 12px;
+    font-size: 0.75rem;
+    color: var(--muted);
+    cursor: pointer;
+  }
+
+  /* ── Summary ── */
+  .saved-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(63,185,80,0.12);
+    color: var(--success);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    margin-bottom: 14px;
+  }
+
+  .summary-headline {
+    font-family: 'Lora', serif;
+    font-size: 1.4rem;
+    font-weight: 400;
+    color: var(--accent);
+    margin-bottom: 4px;
+    line-height: 1.4;
+  }
+
+  .summary-sub { color: var(--muted); font-size: 0.85rem; margin-bottom: 4px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.88rem; margin-top: 14px; }
+  th { text-align: left; color: var(--muted); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1.2px; padding: 8px 10px; border-bottom: 1px solid rgba(255,255,255,0.06); font-weight: 400; }
+  td { padding: 11px 10px; border-bottom: 1px solid rgba(255,255,255,0.04); vertical-align: top; line-height: 1.5; }
+  td:first-child { color: var(--muted); font-size: 0.82rem; width: 36%; }
+  tr:last-child td { border-bottom: none; }
+
+  .score { display: inline-block; background: rgba(240,165,0,0.15); color: var(--accent); border-radius: 20px; padding: 2px 10px; font-size: 0.82rem; }
+
+  .btn-row { display: flex; gap: 10px; margin-top: 22px; }
+  .btn-sec {
+    flex: 1;
+    padding: 13px;
+    border-radius: 50px;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: transparent;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+  .btn-sec:hover { border-color: rgba(255,255,255,0.3); }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- SETUP -->
+  <div id="screen-setup" class="screen active">
+    <div class="header">
+      <h1>Hey Mike 👋</h1>
+      <p>Let's get you set up — just takes a minute.</p>
+    </div>
+    <div class="card">
+      <p class="setup-intro">Before we start your daily check-ins, tell me a little about your situation and what you're working toward.</p>
+      <label>What is your current situation?</label>
+      <textarea id="setup-situation" placeholder="e.g. I'm recovering from a hip replacement at a rehab center. Surgery was May 1st..."></textarea>
+      <label>What is your goal? <span style="text-transform:none;letter-spacing:0;font-size:0.85rem">(Try SMART format — Specific, Measurable, Achievable, Relevant, Time-bound)</span></label>
+      <textarea id="setup-goal" placeholder="e.g. Within 6 weeks, walk unassisted for 100 feet and climb stairs to return home independently."></textarea>
+      <button class="btn-primary" onclick="saveSetup()">Save & Start My First Check-In →</button>
+    </div>
+  </div>
+
+  <!-- CHECKIN -->
+  <div id="screen-checkin" class="screen">
+    <div class="header">
+      <h1>Daily Check-In</h1>
+      <p id="checkin-date"></p>
+    </div>
+    <div class="card">
+      <div class="banner" id="goal-banner">
+        <strong>Mike's Goal</strong>
+        <span id="banner-goal"></span>
+      </div>
+      <div class="chat" id="chat"></div>
+      <div class="input-wrap">
+        <textarea id="user-input" placeholder="Type your answer..." onkeydown="handleKey(event)"></textarea>
+        <button class="btn-send" onclick="sendMessage()">→</button>
+      </div>
+      <button class="btn-mic" id="btn-mic" onclick="toggleMic()">🎙️ Tap to Speak</button>
+      <div class="reset-link" onclick="resetProfile()">Reset profile</div>
+    </div>
+  </div>
+
+  <!-- SUMMARY -->
+  <div id="screen-summary" class="screen">
+    <div class="header">
+      <h1>Great work, Mike! 🎉</h1>
+      <p id="summary-date"></p>
+    </div>
+    <div class="card">
+      <div class="saved-badge">✓ Session saved</div>
+      <div class="summary-headline" id="summary-headline"></div>
+      <div class="summary-sub">Today's structured summary</div>
+      <table>
+        <thead><tr><th>Field</th><th>Today</th></tr></thead>
+        <tbody id="summary-tbody"></tbody>
+      </table>
+      <div class="btn-row">
+        <button class="btn-sec" onclick="copyCSV()">📋 Copy as CSV</button>
+        <button class="btn-sec" onclick="newCheckin()">New check-in</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+<script>
+// ── State ────────────────────────────────────────────────────────────────────
+let profile = null;
+let sessions = [];
+let history = [];
+let sessionData = {};
+let micListening = false;
+let recognition = null;
+
+// ── Boot ─────────────────────────────────────────────────────────────────────
+window.onload = () => {
+  try {
+    profile  = JSON.parse(localStorage.getItem('mike_profile'));
+    sessions = JSON.parse(localStorage.getItem('mike_sessions') || '[]');
+  } catch {}
+  if (profile) startCheckin();
+  else showScreen('screen-setup');
+};
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ── Setup ────────────────────────────────────────────────────────────────────
+function saveSetup() {
+  const situation = document.getElementById('setup-situation').value.trim();
+  const goal      = document.getElementById('setup-goal').value.trim();
+  if (!situation || !goal) { alert('Please fill in both fields.'); return; }
+  profile = { situation, goal, createdAt: new Date().toISOString() };
+  localStorage.setItem('mike_profile', JSON.stringify(profile));
+  startCheckin();
+}
+
+// ── Checkin ───────────────────────────────────────────────────────────────────
+function startCheckin() {
+  const today = new Date().toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric' });
+  document.getElementById('checkin-date').textContent = today;
+  document.getElementById('summary-date').textContent = today;
+  document.getElementById('banner-goal').textContent  = profile.goal;
+  history    = [];
+  sessionData = { date: new Date().toISOString().split('T')[0] };
+  document.getElementById('chat').innerHTML = '';
+  showScreen('screen-checkin');
+  kickoff();
+}
+
+async function kickoff() {
+  const reply = await callAI('Please begin the check-in session now.');
+  appendMsg('ai', reply);
+  speak(reply);
+}
+
+// ── AI ────────────────────────────────────────────────────────────────────────
+function buildSystem() {
+  const prev = sessions.length ? sessions[sessions.length - 1] : null;
+  const num  = sessions.length + 1;
+  return `You are a warm, ENERGETIC, motivating recovery coach helping Mike track his rehabilitation progress. Think great sports coach — enthusiastic, specific, genuinely invested. Keep each reply SHORT (2-3 sentences) unless it's the final wrap-up.
+
+PATIENT CONTEXT:
+Name: Mike
+Situation: ${profile.situation}
+SMART Goal: ${profile.goal}
+Session number: ${num}
+${prev ? `Previous scores — Feeling: ${prev.feeling ?? '??'}/10, Flexibility: ${prev.flexibility ?? '??'}/10, Strength: ${prev.strength ?? '??'}/10` : 'This is Mike\'s very first session.'}
+
+QUESTION SEQUENCE — ask ONE at a time, give a brief energetic reaction, then move on:
+Q1 — CONTEXT CHECK: Recap situation and goal in 1-2 sentences, then ask: has anything changed?
+Q2 — FEELING: Rate 1-10, invite context (sleep, pain, energy, etc.)
+Q3 — PT/OT: How did today's PT or OT session go? What did you work on? (open ended)
+Q4 — FLEXIBILITY: Rate 1-10, then better/worse/same as yesterday?
+Q5 — STRENGTH: Rate 1-10, how are you measuring that, better/worse/same?
+Q6 — NEXT MILESTONE: What's the next milestone you're looking forward to?
+Q7 — GRATITUDE: Something you're grateful for or happy about today?
+Q8 — WRAP UP: Energetic personalised close referencing Mike's goal and building momentum. Then output exactly: %%DONE%%
+Next line: raw JSON only, no markdown:
+{"feeling":7,"feelingContext":"tired but pushed","ptNotes":"hip flexors and balance","flexibility":6,"flexibilityTrend":"better","strength":5,"strengthNotes":"measured by squat reps","strengthTrend":"same","nextMilestone":"walking to the garden","gratitude":"family visit","headline":"Pushed through fatigue — flexibility trending up!"}`;
+}
+
+async function callAI(userText) {
+  showThinking(true);
+  history.push({ role: 'user', content: userText });
+  try {
+    const res  = await fetch('/.netlify/functions/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: history, system: buildSystem() }),
+    });
+    const data = await res.json();
+    const text = data.content?.map(b => b.text || '').join('') || 'Sorry, I had a hiccup — try again!';
+    history.push({ role: 'assistant', content: text });
+    showThinking(false);
+    return text;
+  } catch {
+    showThinking(false);
+    return "I had a little trouble connecting. Try sending your message again!";
+  }
+}
+
+async function sendMessage() {
+  const el   = document.getElementById('user-input');
+  const text = el.value.trim();
+  if (!text) return;
+  el.value = '';
+  appendMsg('user', text);
+  const reply = await callAI(text);
+  handleReply(reply);
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+}
+
+function handleReply(text) {
+  if (text.includes('%%DONE%%')) {
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (jsonMatch) { try { sessionData = { ...sessionData, ...JSON.parse(jsonMatch[0]) }; } catch {} }
+    const clean = text.replace('%%DONE%%','').replace(/\{[\s\S]*\}/,'').trim();
+    appendMsg('ai', clean);
+    speak(clean);
+    sessions.push(sessionData);
+    localStorage.setItem('mike_sessions', JSON.stringify(sessions));
+    setTimeout(showSummary, 2400);
+  } else {
+    appendMsg('ai', text);
+    speak(text);
+  }
+}
+
+// ── DOM helpers ───────────────────────────────────────────────────────────────
+function appendMsg(role, text) {
+  const clean = text.replace('%%DONE%%','').replace(/\{[\s\S]*\}/,'').trim();
+  if (!clean) return;
+  const chat = document.getElementById('chat');
+  const div  = document.createElement('div');
+  div.className = `msg ${role}`;
+  div.innerHTML = `
+    <div class="avatar">${role === 'ai' ? '⚡' : '👤'}</div>
+    <div class="bubble">${clean.replace(/\n/g,'<br>')}</div>`;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+let thinkingEl = null;
+function showThinking(show) {
+  const chat = document.getElementById('chat');
+  if (show) {
+    thinkingEl = document.createElement('div');
+    thinkingEl.className = 'msg ai';
+    thinkingEl.innerHTML = `<div class="avatar">⚡</div><div class="thinking"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
+    chat.appendChild(thinkingEl);
+    chat.scrollTop = chat.scrollHeight;
+  } else if (thinkingEl) {
+    thinkingEl.remove(); thinkingEl = null;
+  }
+}
+
+// ── Voice ─────────────────────────────────────────────────────────────────────
+function speak(text) {
+  if (!window.speechSynthesis) return;
+  const clean = text.replace('%%DONE%%','').replace(/\{[\s\S]*\}/,'').trim();
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(clean);
+  u.rate = 0.95; u.pitch = 1.05;
+  window.speechSynthesis.speak(u);
+}
+
+function toggleMic() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { alert('Speech recognition works best in Safari on iPad.'); return; }
+  if (micListening) { recognition?.stop(); return; }
+  window.speechSynthesis?.cancel();
+  recognition = new SR();
+  recognition.lang = 'en-US';
+  recognition.onstart  = () => { micListening = true;  updateMicBtn(); };
+  recognition.onresult = e  => { document.getElementById('user-input').value = e.results[0][0].transcript; };
+  recognition.onend    = () => {
+    micListening = false; updateMicBtn();
+    const val = document.getElementById('user-input').value.trim();
+    if (val) sendMessage();
+  };
+  recognition.onerror  = () => { micListening = false; updateMicBtn(); };
+  recognition.start();
+}
+
+function updateMicBtn() {
+  const btn = document.getElementById('btn-mic');
+  btn.className = 'btn-mic' + (micListening ? ' listening' : '');
+  btn.textContent = micListening ? '🔴 Listening… tap to stop' : '🎙️ Tap to Speak';
+}
+
+// ── Summary ───────────────────────────────────────────────────────────────────
+function showSummary() {
+  const d = sessionData;
+  document.getElementById('summary-headline').textContent = d.headline || 'Great session today, Mike!';
+  const rows = [
+    ['Date',            d.date || '—'],
+    ['Overall Feeling', d.feeling   ? `<span class="score">${d.feeling}/10</span>${d.feelingContext ? ' · ' + d.feelingContext : ''}` : '—'],
+    ['PT / OT Notes',   d.ptNotes   || '—'],
+    ['Flexibility',     d.flexibility ? `<span class="score">${d.flexibility}/10</span>${d.flexibilityTrend ? ' · ' + d.flexibilityTrend + ' than yesterday' : ''}` : '—'],
+    ['Strength',        d.strength  ? `<span class="score">${d.strength}/10</span>${d.strengthNotes ? ' · ' + d.strengthNotes : ''}${d.strengthTrend ? ' · ' + d.strengthTrend + ' than yesterday' : ''}` : '—'],
+    ['Next Milestone',  d.nextMilestone || '—'],
+    ['Gratitude / Joy', d.gratitude || '—'],
+  ];
+  document.getElementById('summary-tbody').innerHTML = rows.map(([k,v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join('');
+  showScreen('screen-summary');
+  speak(`Incredible effort today, Mike! ${d.headline || 'Keep that momentum going!'}`);
+}
+
+function copyCSV() {
+  const d = sessionData;
+  const h = ['Date','Feeling','Feeling Context','PT Notes','Flexibility','Flex Trend','Strength','Strength Notes','Strength Trend','Next Milestone','Gratitude'];
+  const v = [d.date,d.feeling,d.feelingContext,d.ptNotes,d.flexibility,d.flexibilityTrend,d.strength,d.strengthNotes,d.strengthTrend,d.nextMilestone,d.gratitude];
+  const csv = h.join(',') + '\n' + v.map(x => `"${(x||'').toString().replace(/"/g,'""')}"`).join(',');
+  navigator.clipboard.writeText(csv).then(() => alert('CSV copied! Paste it straight into Google Sheets.'));
+}
+
+function newCheckin() { startCheckin(); }
+
+function resetProfile() {
+  if (!confirm('Reset Mike\'s profile and all session history?')) return;
+  localStorage.removeItem('mike_profile');
+  localStorage.removeItem('mike_sessions');
+  profile = null; sessions = [];
+  showScreen('screen-setup');
+}
+</script>
+</body>
+</html>
