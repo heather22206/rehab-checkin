@@ -6,7 +6,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Mike's Daily Check-In</title>
 <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-<style>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <style>
   :root {
     --bg: #0f1318;
     --surface: #181e27;
@@ -362,6 +363,7 @@ let micListening = false;
 let recognition = null;
 
 // ── Boot ─────────────────────────────────────────────────────────────────────
+emailjs.init("-BmN-2hNn1UayV3mh");
 window.onload = () => {
   try {
     profile  = JSON.parse(localStorage.getItem('mike_profile'));
@@ -558,6 +560,20 @@ function showSummary() {
   ];
   document.getElementById('summary-tbody').innerHTML = rows.map(([k,v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join('');
   showScreen('screen-summary');
+  emailjs.send("Yservice_oklny7j", "template_cphesyn", {
+  date: d.date,
+  feeling: d.feeling,
+  feelingContext: d.feelingContext || '',
+  ptNotes: d.ptNotes || '',
+  flexibility: d.flexibility,
+  flexibilityTrend: d.flexibilityTrend || '',
+  strength: d.strength,
+  strengthNotes: d.strengthNotes || '',
+  strengthTrend: d.strengthTrend || '',
+  nextMilestone: d.nextMilestone || '',
+  gratitude: d.gratitude || '',
+  headline: d.headline || '',
+}).then(() => console.log('Email sent!'));
   speak(`Incredible effort today, Mike! ${d.headline || 'Keep that momentum going!'}`);
 }
 
