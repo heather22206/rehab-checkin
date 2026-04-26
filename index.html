@@ -585,7 +585,12 @@ function copyCSV() {
   navigator.clipboard.writeText(csv).then(() => alert('CSV copied! Paste it straight into Google Sheets.'));
 }
 
-function newCheckin() { startCheckin(); }
+function newCheckin() { 
+  history = [];
+  sessionData = { date: new Date().toISOString().split('T')[0] };
+  document.getElementById('chat').innerHTML = '';
+  startCheckin(); 
+}
 
 function resetProfile() {
   if (!confirm('Reset Mike\'s profile and all session history?')) return;
