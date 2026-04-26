@@ -363,7 +363,7 @@ let micListening = false;
 let recognition = null;
 
 // ── Boot ─────────────────────────────────────────────────────────────────────
-emailjs.init("-BmN-2hNn1UayV3mh");
+emailjs.init("n2Zcerm3vrIdaHQpk");
 window.onload = () => {
   try {
     profile  = JSON.parse(localStorage.getItem('mike_profile'));
@@ -560,7 +560,7 @@ function showSummary() {
   ];
   document.getElementById('summary-tbody').innerHTML = rows.map(([k,v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join('');
   showScreen('screen-summary');
-  emailjs.send("Yservice_oklny7j", "template_cphesyn", {
+  emailjs.send("service_g7ja91o", "template_ao4nmm9", {
   date: d.date,
   feeling: d.feeling,
   feelingContext: d.feelingContext || '',
